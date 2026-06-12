@@ -201,6 +201,25 @@ class Catalog:
 
 
 @dataclass
+class CheckIssue:
+    """单条审核问题"""
+    level: str
+    category: str
+    message: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "level": self.level,
+            "category": self.category,
+            "message": self.message,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CheckIssue":
+        return cls(**data)
+
+
+@dataclass
 class CheckResult:
     """检查结果"""
     resource_id: str
@@ -208,17 +227,46 @@ class CheckResult:
     missing_fields: List[str] = field(default_factory=list)
     sensitive_hits: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+    issues: List[CheckIssue] = field(default_factory=list)
 
     @property
     def has_errors(self) -> bool:
-        return len(self.missing_fields) > 0 or len(self.sensitive_hits) > 0
+        if self.missing_fields:
+            return True
+        return any(i.level in ("critical", "error") for i in self.issues)
 
     @property
     def severity(self) -> str:
-        if self.missing_fields:
+        levels = [i.level for i in self.issues]
+        if "critical" in levels:
+            return "critical"
+        if self.missing_fields or "error" in levels:
             return "error"
-        if self.sensitive_hits:
+        if self.sensitive_hits or "warning" in levels:
             return "warning"
-        if self.warnings:
+        if self.warnings or "info" in levels:
             return "info"
         return "ok"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "resource_id": self.resource_id,
+            "resource_name": self.resource_name,
+            "severity": self.severity,
+            "missing_fields": self.missing_fields,
+            "sensitive_hits": self.sensitive_hits,
+            "warnings": self.warnings,
+            "issues": [i.to_dict() for i in self.issues],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CheckResult":
+        issues = [CheckIssue.from_dict(i) for i in data.get("issues", [])]
+        return cls(
+            resource_id=data["resource_id"],
+            resource_name=data["resource_name"],
+            missing_fields=data.get("missing_fields", []),
+            sensitive_hits=data.get("sensitive_hits", []),
+            warnings=data.get("warnings", []),
+            issues=issues,
+        )

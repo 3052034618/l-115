@@ -30,7 +30,7 @@ EXPORT_PLATFORM_SCHEMA = [
 
 def to_platform_json(catalog: Catalog, resources: Optional[List[Resource]] = None) -> str:
     """生成平台导入 JSON 文件"""
-    target_resources = resources or catalog.resources
+    target_resources = resources if resources is not None else catalog.resources
     items = []
     for r in target_resources:
         item = {
@@ -66,7 +66,7 @@ def to_platform_json(catalog: Catalog, resources: Optional[List[Resource]] = Non
 
 def to_platform_csv(catalog: Catalog, resources: Optional[List[Resource]] = None) -> str:
     """生成平台导入 CSV 文件"""
-    target_resources = resources or catalog.resources
+    target_resources = resources if resources is not None else catalog.resources
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=EXPORT_PLATFORM_SCHEMA, extrasaction="ignore")
     writer.writeheader()
