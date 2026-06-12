@@ -2,7 +2,7 @@
 import json
 import csv
 import io
-from typing import List
+from typing import List, Dict
 from datetime import datetime
 from .models import Resource, Catalog, CheckResult, CheckIssue, SENSITIVE_KEYWORDS, UPDATE_FREQUENCIES, AUTHORIZATION_SCOPES
 
